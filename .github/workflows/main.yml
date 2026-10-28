@@ -11,20 +11,27 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      - name: Create APK Package
+      - name: Create APK Package via Python
         run: |
-          mkdir -p build_apk
-          # کۆکردنەوەی فایلەکانی کیبۆردەکەت
-          [ -f AndroidManifest.xml ] && cp AndroidManifest.xml build_apk/
-          [ -f keys_layout.xml ] && mkdir -p build_apk/res/xml/ && cp keys_layout.xml build_apk/res/xml/
-          [ -f MyKeyboardService.kt ] && mkdir -p build_apk/src/ && cp MyKeyboardService.kt build_apk/src/
+          python3 -c "
+          import zipfile, os
+          os.makedirs('build_apk', exist_ok=True)
+          for root, dirs, files in os.walk('.'):
+              for file in files:
+                  if file.endswith(('.xml', '.kt', '.yml')) and '.github' not in root:
+                      dest_path = os.path.join('build_apk', file)
+                      os.makedirs(os.path.dirname(dest_path), exist_ok=True)
+                      with open(os.path.join(root, file), 'rb') as f_in, open(dest_path, 'wb') as f_out:
+                          f_out.write(f_in.read())
           
-          # دروستکردنی فایلی پاتەکی و گۆڕینی بۆ APK
-          cd build_apk
-          zip -r ../app-debug.apk *
-          cd ..
-          
-          ls -l app-debug.apk
+          with zipfile.ZipFile('app-debug.apk', 'w') as zipf:
+              for root, dirs, files in os.walk('build_apk'):
+                  for file in files:
+                      file_path = os.path.join(root, file)
+                      arcname = os.path.relpath(file_path, 'build_apk')
+                      zipf.write(file_path, arcname)
+          print('Successfully created app-debug.apk')
+          "
 
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
