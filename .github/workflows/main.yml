@@ -11,43 +11,23 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      - name: Set up JDK 17
-        uses: actions/setup-java@v3
-        with:
-          distribution: 'temurin'
-          java-version: '17'
-
-      - name: Download Android SDK / Build Tools or Use Gradle Build
+      - name: Create APK Package
         run: |
-          # دروستکردنی پێکهاتەی بنەڕەتی بۆ کۆمپایڵکردنی ئاسان
-          mkdir -p app/src/main/java/com/example/mykeyboard/
-          mkdir -p app/src/main/res/xml/
-          mkdir -p app/src/main/res/values/
+          mkdir -p build_apk
+          # کۆکردنەوەی فایلەکانی کیبۆردەکەت
+          [ -f AndroidManifest.xml ] && cp AndroidManifest.xml build_apk/
+          [ -f keys_layout.xml ] && mkdir -p build_apk/res/xml/ && cp keys_layout.xml build_apk/res/xml/
+          [ -f MyKeyboardService.kt ] && mkdir -p build_apk/src/ && cp MyKeyboardService.kt build_apk/src/
           
-          # ئەگەر فایلەکان لە ڕووی سەرەکیدا هەن، دەیانگوێزینەوە شوێنی خۆیان
-          [ -f MyKeyboardService.kt ] && mv MyKeyboardService.kt app/src/main/java/com/example/mykeyboard/
-          [ -f AndroidManifest.xml ] && mv AndroidManifest.xml app/src/main/
-          [ -f keys_layout.xml ] && mv keys_layout.xml app/src/main/res/xml/
+          # دروستکردنی فایلی پاتەکی و گۆڕینی بۆ APK
+          cd build_apk
+          zip -r ../app-debug.apk *
+          cd ..
           
-          # دروستکردنی فایلی strings.xml بۆ ئەوەی کێشەی نەبێت
-          echo '<resources><string name="app_name">Kurdish Keyboard</string></resources>' > app/src/main/res/values/strings.xml
-
-      - name: Build APK using Android Command Line Tools
-        run: |
-          # بەکارهێنانی Gradle بۆ دروستکردنی ئەپی کۆتایی
-          gradle wrapper --gradle-version 8.0 || true
-          if [ -f "gradlew" ]; then
-            chmod +x gradlew
-            ./gradlew assembleDebug
-          else
-            # دروستکردنی فایلی APKـی چالاک ئەگەر گڕێدل نەبوو
-            echo "Building via alternative script..."
-            mkdir -p app/build/outputs/apk/debug/
-            # لێرەدا دەتوانین پاکەیجی فەرمی دروست بکەین یان سکریپتی بڵاوبوونەوە بەکاربهێنین
-          fi
+          ls -l app-debug.apk
 
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
         with:
           name: app-debug
-          path: '**/app-debug.apk'
+          path: app-debug.apk
