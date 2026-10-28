@@ -19,4 +19,11 @@ jobs:
 
       - name: Build with Gradle
         run: |
-          echo "android.useAndroidX=true" > gradle.properties
+          echo "Pڕۆسەی ئامادەکاری دەست پێکرد..."
+          # لێرەدا دەتوانین پڕۆژەکە کۆمپایڵ بکەین
+
+      - name: Upload APK Artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: app-debug
+          path: '**/*.apk'
